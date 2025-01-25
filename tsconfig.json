@@ -1,0 +1,47 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "commonjs", //commonjs
+        "rootDir": "src",
+        "outDir": "dist",
+        "strict": true,
+        "moduleResolution": "node",
+        "importHelpers": true,
+        "experimentalDecorators": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "noFallthroughCasesInSwitch": true,
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
+        "forceConsistentCasingInFileNames": true,
+        "removeComments": false,
+        "typeRoots": [
+            "node_modules/@types",
+            "types",
+            "index.d.ts"
+        ],
+        "sourceMap": true,
+        "baseUrl": "./",
+        "noImplicitAny": false,
+        "emitDeclarationOnly": false,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "declaration": true,
+        "paths": {
+            "@/": [
+                "./src/"
+            ]
+        },
+        "emitDecoratorMetadata": true,
+        "preserveConstEnums": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "noImplicitThis": true,
+        "noImplicitReturns": true,
+        "noErrorTruncation": true,
+        "stripInternal": true,
+    },
+    "exclude": ["node_modules"],
+    "include": ["src/**/*", "types", "src/events/.interactions"]
+}

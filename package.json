@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "discord-api-types": "^0.37.116",
+    "kodkord": "^1.0.3-dev-12916015664.0",
+    "sourcebin": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.17",
+    "@types/node": "^22.10.7"
+  }
+}

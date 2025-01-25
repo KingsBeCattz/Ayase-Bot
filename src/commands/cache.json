@@ -1,0 +1,36 @@
+{
+  "eval": {
+    "name": "eval",
+    "description": "Eval a typescript code",
+    "type": 1,
+    "options": [
+      {
+        "type": 3,
+        "name": "code",
+        "description": "Code to evaluate!",
+        "required": true
+      }
+    ]
+  },
+  "simule": {
+    "name": "simule",
+    "description": "Simulates a command using a message",
+    "type": 1,
+    "options": []
+  },
+  "ping": {
+    "name": "ping",
+    "description": "See my ping!",
+    "type": 1,
+    "options": []
+  },
+  "help": {
+    "name": "help",
+    "description": "Get help about me!",
+    "name_localizations": {
+      "es-419": "ayuda"
+    },
+    "type": 1,
+    "options": []
+  }
+}
