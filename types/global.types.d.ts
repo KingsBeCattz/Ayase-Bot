@@ -51,6 +51,14 @@ declare global {
 		 */
 		format(separators?: { comma: string; and: string }): string;
 	}
+
+	interface CooldownData {
+		user_id: string;
+		command: string;
+		timestamp: number;
+		time: number;
+		knows: boolean;
+	}
 }
 
 export {};

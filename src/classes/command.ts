@@ -40,6 +40,17 @@ export class Command {
 	}
 
 	async verify(ctx: Context): Promise<boolean> {
+		if (!ctx.CACHE.COOLDOWNS.isExpired(ctx.AUTHOR.id, this.data.name)) {
+			const data = ctx.CACHE.COOLDOWNS.getForUser(ctx.AUTHOR.id, this.data.name)!;
+			if (data.knows) return false;
+			ctx.write({
+				content: `Hey, you're going too fast! You'll be able to use this <t:${((data.timestamp + data.time) / 1000).toFixed()}:R>, so just wait a little while, okay?`
+			});
+			data.knows = true;
+			ctx.CACHE.COOLDOWNS.setForUser(data);
+			return false;
+		}
+
 		if (this.settings.developer && !_developers_list.includes(ctx.AUTHOR.id)) {
 			ctx.write({
 				content:
@@ -47,6 +58,15 @@ export class Command {
 			});
 			return false;
 		}
+
+		if (this.settings.cooldown)
+			ctx.CACHE.COOLDOWNS.setForUser({
+				user_id: ctx.AUTHOR.id,
+				command: this.data.name,
+				timestamp: Date.now(),
+				time: this.settings.cooldown,
+				knows: false
+			});
 
 		switch (this.settings.type) {
 			case CommandType.DM: {

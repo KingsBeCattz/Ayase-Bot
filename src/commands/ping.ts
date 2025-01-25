@@ -9,7 +9,7 @@ export default new Command({
 		type: CommandType.GLOBAL,
 		developer: false,
 		experimental: false,
-		cooldown: 0
+		cooldown: 5000
 	},
 	async code(ctx) {
 		const MSG_TIMESTAMP = Number((BigInt(ctx.DATA.id) >> 22n) + 1420070400000n);

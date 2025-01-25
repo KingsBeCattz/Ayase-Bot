@@ -14,6 +14,7 @@ import { CommandLoader } from './auxiliar/command.loader';
 import { Loader } from './auxiliar/generic.loader';
 import type { Event } from './classes/event';
 
+import { CooldownCache } from './auxiliar/cooldown.cache';
 import { Utils } from './auxiliar/utils';
 
 export const CLIENT = new Client({
@@ -28,6 +29,17 @@ export const CLIENT = new Client({
 export const UTILS = new Utils(CLIENT);
 
 export const DATABASE = new Database('src/database.sqlite', { strict: false });
+/*
+DATABASE.exec(`
+  CREATE TABLE IF NOT EXISTS cooldowns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    command TEXT NOT NULL UNIQUE,
+    timestamp INTEGER NOT NULL UNIQUE,
+    time INTEGER NOT NULL UNIQUE
+  );
+`);
+*/
 
 export const CACHE = {
 	USERS: new Cache<APIUser>(CLIENT, '/users/{id}', 'USERS'),
@@ -36,7 +48,8 @@ export const CACHE = {
 		CLIENT,
 		'/channels/{id}',
 		'CHANNELS'
-	)
+	),
+	COOLDOWNS: new CooldownCache()
 };
 
 new Loader<Event<GatewayDispatchEvents>>((loader) =>
