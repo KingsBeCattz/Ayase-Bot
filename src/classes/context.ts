@@ -56,7 +56,7 @@ export class Context {
 
 		this.CLIENT = CLIENT;
 		this.DATA = DATA;
-		this.AUTHOR = 'author' in DATA ? DATA.author : DATA.member?.user!;
+		this.AUTHOR = 'author' in DATA ? DATA.author : (DATA.member?.user ?? DATA.user)!;
 		this.CONFIG = CONFIG;
 		this.DATABASE = DATABASE;
 		this.UTILS = UTILS;

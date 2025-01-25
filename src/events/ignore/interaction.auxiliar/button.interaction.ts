@@ -13,12 +13,12 @@ export async function ButtonAuxiliar(i: APIInteraction) {
 	)
 		return;
 
+	const userid = i.member?.user.id ?? i.user?.id;
 	const id_args = i.data.custom_id.split('.');
-
 	switch (true) {
 		case i.data.custom_id.startsWith('delete.eval'): {
 			//console.log(id_args, i.data.custom_id, i.user?.id);
-			if (id_args.pop() !== i.user?.id) {
+			if (id_args.pop() !== userid) {
 				CLIENT.rest.post<APIMessage>(`/interactions/${i.id}/${i.token}/callback`, {
 					body: {
 						type: 4,

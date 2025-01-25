@@ -1,4 +1,4 @@
-import { Command, CommandType } from 'src/classes/command';
+import { Command, CommandCategory, CommandType } from 'src/classes/command';
 
 export default new Command({
 	data: {
@@ -9,7 +9,8 @@ export default new Command({
 		type: CommandType.GLOBAL,
 		developer: false,
 		experimental: false,
-		cooldown: 5000
+		cooldown: 5000,
+		category: CommandCategory.INFORMATION
 	},
 	async code(ctx) {
 		const MSG_TIMESTAMP = Number((BigInt(ctx.DATA.id) >> 22n) + 1420070400000n);

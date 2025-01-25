@@ -8,7 +8,7 @@ import {
 	ApplicationCommandOptionType
 } from 'discord-api-types/v10';
 import { Panic } from 'kodkord';
-import { Command, CommandType } from 'src/classes/command';
+import { Command, CommandCategory, CommandType } from 'src/classes/command';
 
 const transpiler = new Transpiler({
 	loader: 'ts'
@@ -23,7 +23,8 @@ export default new Command({
 		type: CommandType.GLOBAL,
 		developer: true,
 		experimental: false,
-		cooldown: 0
+		cooldown: 0,
+		category: CommandCategory.DEVELOPER
 	},
 	options: [
 		{
@@ -36,11 +37,6 @@ export default new Command({
 	async code(ctx) {
 		const message = await ctx.write({
 			content: '# Evaluating...'
-			/*
-      message_reference: {
-        message_id: ctx.MESSAGE.id
-      }
-      */
 		});
 		const _time = Date.now();
 

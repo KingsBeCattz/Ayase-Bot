@@ -1,5 +1,5 @@
 import type { APIMessage } from 'discord-api-types/v10';
-import { Command, CommandType } from 'src/classes/command';
+import { Command, CommandCategory, CommandType } from 'src/classes/command';
 import { Context } from 'src/classes/context';
 
 export default new Command({
@@ -11,7 +11,8 @@ export default new Command({
 		type: CommandType.GLOBAL,
 		developer: true,
 		experimental: true,
-		cooldown: 0
+		cooldown: 0,
+		category: CommandCategory.DEVELOPER
 	},
 	async code(ctx) {
 		if (!ctx.ARGS.length) {

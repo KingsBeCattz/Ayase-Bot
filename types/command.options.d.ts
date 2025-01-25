@@ -7,7 +7,11 @@ import {
 	ChannelType,
 	type Locale
 } from 'discord-api-types/v10';
-import { _developers_list } from 'src/classes/command';
+import {
+	type CommandCategory,
+	type CommandType,
+	_developers_list
+} from 'src/classes/command';
 import type { Context } from 'src/classes/context';
 
 declare global {
@@ -21,6 +25,7 @@ declare global {
 
 	interface CommandSettings {
 		type: CommandType;
+		category: CommandCategory;
 		developer: boolean;
 		experimental: boolean;
 		/**
