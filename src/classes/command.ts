@@ -46,9 +46,10 @@ export class Command {
 				this.data.name
 			)!;
 			if (data.knows) return false;
-			ctx.write({
+			const msg = await ctx.write({
 				content: `Hey, you're going too fast! You'll be able to use this <t:${((data.timestamp + data.time) / 1000).toFixed()}:R>, so just wait a little while, okay?`
 			});
+			setTimeout(() => ctx.delete(msg), data.time - 250);
 			data.knows = true;
 			ctx.CACHE.COOLDOWNS.setForUser(data);
 			return false;

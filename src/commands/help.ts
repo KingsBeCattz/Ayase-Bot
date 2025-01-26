@@ -31,9 +31,14 @@ export default new Command({
 				{
 					title: '¡Bienvenido al Comando de Ayuda!',
 					description: `Aquí encontrarás todo lo necesario para entender y usar mis comandos de forma sencilla. ¡Estoy aquí para ayudarte! Actualmente, tengo ${ctx.COMMANDS.size} comandos organizados en ${COMMANDS_CATEGORIES.length} categorías.`,
-					color: ctx.UTILS.random.number(16777215),
+					color: 15255263,
 					thumbnail: {
 						url: CLIENT_USER.avatar().url({ size: 1024 })!
+					},
+					timestamp: new Date().toISOString(),
+					footer: {
+						text: ctx.client_user!.raw.username,
+						icon_url: ctx.client_user!.avatar().url()!
 					}
 				}
 			],

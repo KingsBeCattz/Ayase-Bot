@@ -53,7 +53,9 @@ export async function HelpAuxiliar(i: Interaction<InteractionType>) {
 											.values()
 											.map((c) => `\`${c.data.name}\` - ${c.data.description}`)
 									).join('\n') || 'Nothing is here lol'
-								}`
+								}`,
+								timestamp: i.raw.message.embeds[0].timestamp,
+								footer: i.raw.message.embeds[0].footer
 							}
 						]
 					}
