@@ -1,38 +1,51 @@
 import { CLIENT } from '@/';
+import type { Interaction } from '@kodkord/classes';
 import {
-	type APIInteraction,
-	type APIMessage,
 	ComponentType,
-	InteractionType
+	InteractionResponseType,
+	type InteractionType,
+	MessageFlags,
+	Routes
 } from 'discord-api-types/v10';
+import { CONSTANTS, ERROR_MESSAGES } from 'src/auxiliar/constants';
+import CONFIG from 'src/ayase.config.json';
 
-export async function ButtonAuxiliar(i: APIInteraction) {
+export async function ButtonAuxiliar(i: Interaction<InteractionType>) {
 	if (
-		i.type !== InteractionType.MessageComponent ||
-		i.data.component_type !== ComponentType.Button
+		!i.isMessageComponent() ||
+		i.raw.data.component_type !== ComponentType.Button
 	)
 		return;
 
-	const userid = i.member?.user.id ?? i.user?.id;
-	const id_args = i.data.custom_id.split('.');
+	const userid = i.raw.user?.id ?? i.raw.member?.user.id;
+	const id_args = i.raw.data.custom_id.split('.');
 	switch (true) {
-		case i.data.custom_id.startsWith('delete.eval'): {
-			//console.log(id_args, i.data.custom_id, i.user?.id);
+		case i.raw.data.custom_id.startsWith(CONSTANTS.DELETE_EVAL): {
 			if (id_args.pop() !== userid) {
-				CLIENT.rest.post<APIMessage>(`/interactions/${i.id}/${i.token}/callback`, {
-					body: {
-						type: 4,
-						data: {
-							content:
-								"Hold it right there! This isn't for you, so don't even try it, okay?",
-							flags: 1 << 6
-						}
-					} as unknown as Record<string, object>
+				//await i.defer(MessageFlags.Loading | MessageFlags.Ephemeral);
+				await i.respond({
+					type: InteractionResponseType.ChannelMessageWithSource,
+					data: {
+						content: ERROR_MESSAGES.NOT_FOR_U,
+						flags: MessageFlags.Ephemeral
+					}
 				});
 				return;
 			}
-			CLIENT.rest.delete(
-				`/channels/${i.message.channel_id}/messages/${i.message.id}`
+
+			await CLIENT.rest.post(Routes.interactionCallback(i.raw.id, i.raw.token), {
+				body: {
+					type: 6
+				}
+			});
+			CLIENT.rest.patch(
+				Routes.webhookMessage(CONFIG.bot.id, i.raw.token, i.raw.message.id),
+				{
+					body: {
+						content: '```\nDELETED EVAL\n```',
+						components: []
+					}
+				}
 			);
 		}
 	}

@@ -13,12 +13,16 @@ export default new Command({
 		category: CommandCategory.INFORMATION
 	},
 	async code(ctx) {
-		const MSG_TIMESTAMP = Number((BigInt(ctx.DATA.id) >> 22n) + 1420070400000n);
+		const MSG_TIMESTAMP = Number(
+			//@ts-expect-error
+			(BigInt(ctx.DATA.raw.id) >> 22n) + 1420070400000n
+		);
 		const message = await ctx.write({
 			content: '# CALCULATING...'
 		});
 		const RESPONSE_TIMESTAMP = Number(
-			(BigInt(message.id) >> 22n) + 1420070400000n
+			//@ts-expect-error
+			(BigInt(message.raw.id) >> 22n) + 1420070400000n
 		);
 		ctx.edit(
 			{

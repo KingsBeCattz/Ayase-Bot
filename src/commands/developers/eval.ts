@@ -8,6 +8,7 @@ import {
 	ApplicationCommandOptionType
 } from 'discord-api-types/v10';
 import { Panic } from 'kodkord';
+import { CONSTANTS, EMOJIS, LOGOS } from 'src/auxiliar/constants';
 import { Command, CommandCategory, CommandType } from 'src/classes/command';
 
 const transpiler = new Transpiler({
@@ -84,9 +85,9 @@ export default new Command({
 				type: 2,
 				style: 4,
 				label: 'Delete',
-				custom_id: `delete.eval.${ctx.AUTHOR.id}`,
+				custom_id: `${CONSTANTS.DELETE_EVAL}.${ctx.AUTHOR.raw.id}`,
 				emoji: {
-					id: '1129492489020121169'
+					id: EMOJIS.TRASH
 				}
 			},
 			{
@@ -96,7 +97,7 @@ export default new Command({
 				custom_id: 'time',
 				disabled: true,
 				emoji: {
-					id: '1129498664822374530'
+					id: EMOJIS.CLOCK
 				}
 			},
 			{
@@ -106,7 +107,7 @@ export default new Command({
 				custom_id: 'type',
 				disabled: true,
 				emoji: {
-					id: '1129498662272245800'
+					id: EMOJIS.MAGNIFIER
 				}
 			}
 		];
@@ -128,7 +129,7 @@ export default new Command({
 				label: 'SourceBin',
 				url: bin.shortUrl,
 				emoji: {
-					id: '1129493685839597618'
+					id: LOGOS.SOURCEBIN
 				}
 			});
 		}

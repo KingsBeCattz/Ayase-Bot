@@ -1,6 +1,9 @@
-import type { APIMessage } from 'discord-api-types/v10';
+import {
+	type APIMessage,
+	GatewayDispatchEvents,
+	type GatewayMessageCreateDispatchData
+} from 'discord-api-types/v10';
 import { Command, CommandCategory, CommandType } from 'src/classes/command';
-import { Context } from 'src/classes/context';
 
 export default new Command({
 	data: {
@@ -18,15 +21,7 @@ export default new Command({
 		if (!ctx.ARGS.length) {
 			ctx.write({
 				content:
-					"In order for you to use that command, I need you to give me these arguments, ok?\n```\n<cmd> - Command to execute\n<msg> - Base message id\n<ch> - Channel id on which the message is on\n```\nSo don't make me repeat myself!"
-			});
-			return;
-		}
-		const cmd = ctx.COMMANDS.get(ctx.ARGS.shift() ?? '');
-		if (!cmd) {
-			ctx.write({
-				content:
-					"Give me a command that already exists, please! I don't want to see you make one up, eh?"
+					"In order for you to use that command, I need you to give me these arguments, ok?\n```\n<msg> - Base message id\n<ch> - Channel id on which the message is on\n```\nSo don't make me repeat myself!"
 			});
 			return;
 		}
@@ -64,20 +59,30 @@ export default new Command({
 			return;
 		}
 
+		const _PREFIX =
+			ctx.prefixes.find((p) =>
+				'content' in MSG
+					? MSG.content?.toLowerCase().startsWith(p)
+					: ctx.CONFIG.prefix
+			) ?? ctx.CONFIG.prefix;
+		const _ARGS = MSG.content.slice(_PREFIX.length).trim().split(/ +/) ?? [];
+		const _FIRST_ARG = _ARGS.shift()?.toLowerCase();
+		const CMD = ctx.COMMANDS.getCommand(_FIRST_ARG ?? '');
+		if (!CMD) {
+			ctx.write({
+				content:
+					"It looks like the message you gave me doesn't contain any of my messages - try giving me one that does contain something of mine!"
+			});
+		}
 		ctx.edit(
 			{
-				content: `> **Author**: <@${MSG.author.id}>\n> **Requested by**: <@${ctx.AUTHOR.id}>\n-# **Keep in mind that this command is designed for debugging only, ok? Use it with care!**`
+				content: `> **Author**: <@${MSG.author.id}>\n> **Requested by**: <@${ctx.AUTHOR.raw.id}>\n> **Content**: ${MSG.content}\n> **Command**: ${CMD?.data.name}\n-# **Keep in mind that this command is designed for debugging only, ok? Use it with care!**`
 			},
 			res
 		);
-		cmd.code(
-			new Context(
-				ctx.CLIENT,
-				await ctx.CLIENT.rest.get(
-					`/channels/${ctx.ARGS[1]}/messages/${ctx.ARGS[0]}`
-				),
-				ctx.COMMANDS
-			)
+
+		ctx.CLIENT.events.get(GatewayDispatchEvents.MessageCreate)!(
+			MSG as GatewayMessageCreateDispatchData
 		);
 	}
 });

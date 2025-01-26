@@ -1,12 +1,11 @@
 import { Database } from 'bun:sqlite';
 import {
-	type APIDMChannel,
 	type APIGuild,
-	type APIGuildChannel,
-	type APIUser,
 	type ChannelType,
 	type GatewayDispatchEvents,
-	GatewayIntentBits
+	GatewayIntentBits,
+	Routes,
+	type Snowflake
 } from 'discord-api-types/v10';
 import { Client, Note } from 'kodkord';
 import { Cache } from 'src/auxiliar/generic.cache';
@@ -14,6 +13,7 @@ import { CommandLoader } from './auxiliar/command.loader';
 import { Loader } from './auxiliar/generic.loader';
 import type { Event } from './classes/event';
 
+import { Channel, User } from '@kodkord/classes';
 import { CooldownCache } from './auxiliar/cooldown.cache';
 import { Utils } from './auxiliar/utils';
 
@@ -42,11 +42,24 @@ DATABASE.exec(`
 */
 
 export const CACHE = {
-	USERS: new Cache<APIUser>(CLIENT, '/users/{id}', 'USERS'),
-	GUILDS: new Cache<APIGuild>(CLIENT, '/guilds/{id}', 'GUILDS'),
-	CHANNELS: new Cache<APIGuildChannel<ChannelType> | APIDMChannel>(
+	USERS: new Cache<User, Snowflake | '@me'>(
 		CLIENT,
-		'/channels/{id}',
+		Routes.user,
+		//@ts-expect-error
+		(user) => new User(CLIENT.rest, user),
+		'USERS'
+	),
+	GUILDS: new Cache<APIGuild, Snowflake>(
+		CLIENT,
+		Routes.guild,
+		(_) => _,
+		'GUILDS'
+	),
+	CHANNELS: new Cache<Channel<ChannelType>, Snowflake>(
+		CLIENT,
+		Routes.channel,
+		//@ts-expect-error
+		(data) => new Channel(CLIENT.rest, data),
 		'CHANNELS'
 	),
 	COOLDOWNS: new CooldownCache()

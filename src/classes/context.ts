@@ -1,16 +1,20 @@
 import type { Database } from 'bun:sqlite';
+import { Interaction, Message, User } from '@kodkord/classes';
 import {
-	type APIChatInputApplicationCommandInteraction,
+	type APIApplicationCommandInteraction,
+	type APIChatInputApplicationCommandInteractionData,
+	type APIInteractionResponse,
 	type APIMessage,
-	type APIUser,
 	ApplicationCommandOptionType,
-	type GatewayMessageCreateDispatchData,
+	type InteractionType,
+	MessageFlags,
+	type MessageType,
 	type RESTPatchAPIChannelMessageJSONBody,
 	type RESTPostAPIChannelMessageJSONBody,
-	type RESTPostAPIInteractionCallbackWithResponseResult
+	Routes
 } from 'discord-api-types/v10';
 import { type Client, Note } from 'kodkord';
-import type { Loader } from 'src/auxiliar/generic.loader';
+import type { CommandLoader } from 'src/auxiliar/command.loader';
 import type { Utils } from 'src/auxiliar/utils';
 import CONFIG from 'src/ayase.config.json';
 import { CACHE, DATABASE, UTILS } from '..';
@@ -18,17 +22,15 @@ import type { Command } from './command';
 
 export class Context {
 	CLIENT: Client;
-	DATA:
-		| GatewayMessageCreateDispatchData
-		| APIChatInputApplicationCommandInteraction;
-	AUTHOR: APIUser;
+	DATA: Message<MessageType> | Interaction<InteractionType>;
+	AUTHOR: User;
 	CONFIG: typeof CONFIG;
 	DATABASE: Database;
 
 	ARGS: string[];
 	PREFIX: string;
 
-	COMMANDS: Loader<Command>;
+	COMMANDS: CommandLoader;
 	COMMAND?: Command;
 
 	CACHE: typeof CACHE;
@@ -36,27 +38,38 @@ export class Context {
 
 	constructor(
 		CLIENT: Client,
-		DATA:
-			| GatewayMessageCreateDispatchData
-			| APIChatInputApplicationCommandInteraction,
-		COMMANDS: Loader<Command>
+		DATA: Message<MessageType> | Interaction<InteractionType>,
+		COMMANDS: CommandLoader
 	) {
 		const _PREFIX =
 			this.prefixes.find((p) =>
-				'content' in DATA
-					? DATA.content?.toLowerCase().startsWith(p)
+				DATA instanceof Message
+					? (DATA.raw as APIMessage).content?.toLowerCase().startsWith(p)
 					: CONFIG.prefix
 			) ?? CONFIG.prefix;
 		const _ARGS =
-			'content' in DATA
-				? (DATA.content.slice(_PREFIX.length).trim().split(/ +/) ?? [])
+			DATA instanceof Message
+				? ((DATA.raw as APIMessage).content
+						.slice(_PREFIX.length)
+						.trim()
+						.split(/ +/) ?? [])
 				: [];
 		const _FIRST_ARG =
-			'data' in DATA ? DATA.data.name : _ARGS.shift()?.toLowerCase();
+			DATA instanceof Message
+				? _ARGS.shift()?.toLowerCase()
+				: (DATA.raw as APIApplicationCommandInteraction).data.name;
 
 		this.CLIENT = CLIENT;
 		this.DATA = DATA;
-		this.AUTHOR = 'author' in DATA ? DATA.author : (DATA.member?.user ?? DATA.user)!;
+		this.AUTHOR =
+			this.DATA instanceof Message
+				? this.DATA.author()
+				: new User(
+						//@ts-expect-error
+						CLIENT.rest,
+						(this.DATA.raw as APIApplicationCommandInteraction).user ??
+							(this.DATA.raw as APIApplicationCommandInteraction).member?.user!
+					);
 		this.CONFIG = CONFIG;
 		this.DATABASE = DATABASE;
 		this.UTILS = UTILS;
@@ -75,17 +88,14 @@ export class Context {
 	}
 
 	async cache() {
-		const channel_id =
-			'channel' in this.DATA ? this.DATA.channel.id : this.DATA.channel_id;
+		const channel = (await this.DATA.channel())!;
 
 		if (!this.CACHE.USERS.has(CONFIG.bot.id))
 			await this.CACHE.USERS.fetch(CONFIG.bot.id);
-		if (!this.CACHE.USERS.has(this.AUTHOR.id))
-			this.CACHE.USERS.set(this.AUTHOR.id, this.AUTHOR);
-		if (!this.CACHE.CHANNELS.has(channel_id))
-			await this.CACHE.CHANNELS.fetch(channel_id);
-		if (this.DATA.guild_id && !this.CACHE.GUILDS.has(this.DATA.guild_id))
-			await this.CACHE.GUILDS.fetch(this.DATA.guild_id);
+		if (!this.CACHE.USERS.has(this.AUTHOR.raw.id))
+			this.CACHE.USERS.set(this.AUTHOR.raw.id, this.AUTHOR);
+		if (!this.CACHE.CHANNELS.has(channel.raw.id))
+			await this.CACHE.CHANNELS.set(channel.raw.id, channel);
 
 		return this;
 	}
@@ -95,15 +105,7 @@ export class Context {
 	}
 
 	get guild() {
-		return this.CACHE.GUILDS.get(this.DATA.guild_id ?? '');
-	}
-
-	get channel() {
-		const channel_id =
-			'channel' in this.DATA ? this.DATA.channel.id : this.DATA.channel_id;
-		if (!this.CACHE.CHANNELS.get(channel_id))
-			this.CACHE.CHANNELS.fetch(channel_id);
-		return this.CACHE.CHANNELS.get(channel_id)!;
+		return null; //this.CACHE.GUILDS.get(this.DATA.guild_id ?? '');
 	}
 
 	get prefixes() {
@@ -111,42 +113,68 @@ export class Context {
 	}
 
 	public async write(
-		data: RESTPostAPIChannelMessageJSONBody,
-		channel_id = 'channel' in this.DATA
-			? this.DATA.channel.id
-			: this.DATA.channel_id
-	): Promise<APIMessage> {
-		if ('token' in this.DATA) {
-			return (
-				await this.CLIENT.rest.post<RESTPostAPIInteractionCallbackWithResponseResult>(
-					`/interactions/${this.DATA.id}/${this.DATA.token}/callback?with_response=true`,
-					{
-						body: {
-							type: 4,
-							data: data
-						} as unknown as Record<string, object>
-					}
+		data: RESTPostAPIChannelMessageJSONBody | APIInteractionResponse
+		//@ts-expect-error
+	): Promise<Message<MessageType>> {
+		if (this.DATA instanceof Interaction && this.DATA.isApplicationCommand()) {
+			await this.DATA.defer(MessageFlags.Loading);
+			await this.DATA.respond(data as APIInteractionResponse);
+			return new Message(
+				//@ts-expect-error
+				this.CLIENT.rest,
+				await this.CLIENT.rest.get<APIMessage>(
+					Routes.webhookMessage(this.CONFIG.bot.id, this.DATA.raw.token, '@original')
 				)
-			).resource?.message!;
+			);
 		}
-
-		return await this.CLIENT.rest.post(`/channels/${channel_id}/messages`, {
-			body: data as Record<string, object>
-		});
+		if (this.DATA instanceof Message && this.DATA.isDefault()) {
+			return (await (await this.DATA.channel())!.postMessage(
+				data as RESTPostAPIChannelMessageJSONBody
+			))!;
+		}
 	}
 
-	public async edit(data: RESTPatchAPIChannelMessageJSONBody, msg: APIMessage) {
-		return await this.CLIENT.rest.patch(
-			`/channels/${msg.channel_id}/messages/${msg.id}`,
-			{
-				body: data as Record<string, object>
-			}
+	public async edit(data: APIInteractionResponse): Promise<Message<MessageType>>;
+	public async edit(
+		data: RESTPatchAPIChannelMessageJSONBody,
+		msg: Message<MessageType>
+	): Promise<Message<MessageType>>;
+	public async edit(
+		data: APIInteractionResponse | RESTPatchAPIChannelMessageJSONBody,
+		msg?: Message<MessageType>
+	): Promise<Message<MessageType>> {
+		if (this.DATA instanceof Interaction && this.DATA.isApplicationCommand()) {
+			await this.DATA.editResponse(data as APIInteractionResponse);
+			return new Message(
+				//@ts-expect-error
+				this.CLIENT.rest,
+				await this.CLIENT.rest.get<APIMessage>(
+					Routes.webhookMessage(this.CONFIG.bot.id, this.DATA.raw.token, '@original')
+				)
+			);
+		}
+
+		return new Message(
+			//@ts-expect-error
+			this.CLIENT.rest,
+			await this.CLIENT.rest.patch<APIMessage>(
+				Routes.channelMessage(
+					(await msg!.channel())!.raw.id,
+					(msg!.raw as APIMessage).id
+				),
+				{ body: data as Record<string, object> }
+			)
 		);
 	}
 
-	public async delete(msg: APIMessage) {
+	public async delete(msg: Message<MessageType>) {
 		return await this.CLIENT.rest
-			.delete(`/channels/${msg.channel_id}/messages/${msg.id}`)
+			.delete(
+				Routes.channelMessage(
+					(await msg!.channel())!.raw.id,
+					(msg!.raw as APIMessage).id
+				)
+			)
 			.then((_) => true)
 			.catch((e: Error) => {
 				new Note('Delete Message', e.message).panic();
@@ -155,29 +183,35 @@ export class Context {
 	}
 
 	public get(name: string, expected: ApplicationCommandOptionType) {
-		if (!('token' in this.DATA)) return null;
+		if (this.DATA instanceof Message || !this.DATA.isApplicationCommand())
+			return null;
 		return (
-			this.DATA.data.options
+			(this.DATA.raw.data as APIChatInputApplicationCommandInteractionData).options
 				?.filter((op) => op.type === expected)
 				.find((op) => op.name.toLowerCase() === name.toLowerCase()) ?? null
 		);
 	}
 
 	get subcommandgroup() {
-		if (!('token' in this.DATA)) return null;
+		if (this.DATA instanceof Message || !this.DATA.isApplicationCommand())
+			return null;
 		return (
-			this.DATA.data.options?.find(
+			(
+				this.DATA.raw.data as APIChatInputApplicationCommandInteractionData
+			).options?.find(
 				(op) => op.type === ApplicationCommandOptionType.SubcommandGroup
 			)?.name ?? null
 		);
 	}
 
 	get subcommand() {
-		if (!('token' in this.DATA)) return null;
+		if (this.DATA instanceof Message || !this.DATA.isApplicationCommand())
+			return null;
 		return (
-			this.DATA.data.options?.find(
-				(op) => op.type === ApplicationCommandOptionType.Subcommand
-			)?.name ?? null
+			(
+				this.DATA.raw.data as APIChatInputApplicationCommandInteractionData
+			).options?.find((op) => op.type === ApplicationCommandOptionType.Subcommand)
+				?.name ?? null
 		);
 	}
 }

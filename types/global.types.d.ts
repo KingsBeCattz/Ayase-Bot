@@ -24,6 +24,14 @@ declare global {
 		 * The first character of a string will be in upper case.
 		 */
 		capitalize(): string;
+		/**
+		 * Reverses a string.
+		 */
+		reverse(): string;
+		/**
+		 * Fills a string with the given values
+		 */
+		fill(keywords: Record<string, string | number | boolean>): string;
 	}
 
 	interface Number {

@@ -40,8 +40,11 @@ export class Command {
 	}
 
 	async verify(ctx: Context): Promise<boolean> {
-		if (!ctx.CACHE.COOLDOWNS.isExpired(ctx.AUTHOR.id, this.data.name)) {
-			const data = ctx.CACHE.COOLDOWNS.getForUser(ctx.AUTHOR.id, this.data.name)!;
+		if (!ctx.CACHE.COOLDOWNS.isExpired(ctx.AUTHOR.raw.id, this.data.name)) {
+			const data = ctx.CACHE.COOLDOWNS.getForUser(
+				ctx.AUTHOR.raw.id,
+				this.data.name
+			)!;
 			if (data.knows) return false;
 			ctx.write({
 				content: `Hey, you're going too fast! You'll be able to use this <t:${((data.timestamp + data.time) / 1000).toFixed()}:R>, so just wait a little while, okay?`
@@ -51,7 +54,10 @@ export class Command {
 			return false;
 		}
 
-		if (this.settings.developer && !_developers_list.includes(ctx.AUTHOR.id)) {
+		if (
+			this.settings.developer &&
+			!_developers_list.includes(ctx.AUTHOR.raw.id)
+		) {
 			ctx.write({
 				content:
 					"I'm sorry, but this is for my developers only! I don't want anyone else sticking their hand in where it doesn't belong, understood?"
@@ -61,7 +67,7 @@ export class Command {
 
 		if (this.settings.cooldown)
 			ctx.CACHE.COOLDOWNS.setForUser({
-				user_id: ctx.AUTHOR.id,
+				user_id: ctx.AUTHOR.raw.id,
 				command: this.data.name,
 				timestamp: Date.now(),
 				time: this.settings.cooldown,
@@ -70,7 +76,7 @@ export class Command {
 
 		switch (this.settings.type) {
 			case CommandType.DM: {
-				if (ctx.channel.type !== ChannelType.DM) {
+				if ((await ctx.DATA.channel())!.raw.type !== ChannelType.DM) {
 					ctx.write({
 						content:
 							'Oops, sorry! This command is exclusively for use in my direct messages, okay? So come over here and do it right.'
@@ -80,7 +86,7 @@ export class Command {
 				break;
 			}
 			case CommandType.GUILD: {
-				if (ctx.channel.type === ChannelType.DM) {
+				if ((await ctx.DATA.channel())!.raw.type === ChannelType.DM) {
 					ctx.write({
 						content:
 							"Sorry! This command is exclusively for use on servers, so it doesn't work here."

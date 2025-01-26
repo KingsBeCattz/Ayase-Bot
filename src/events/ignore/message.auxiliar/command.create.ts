@@ -1,9 +1,10 @@
 import { CLIENT, COMMANDS } from '@/';
-import type { GatewayMessageCreateDispatchData } from 'discord-api-types/gateway/v10';
+import type { Message } from '@kodkord/classes';
+import type { MessageType } from 'discord-api-types/v10';
 import { Context } from 'src/classes/context';
 
-export async function CommandAuxiliar(msg: GatewayMessageCreateDispatchData) {
-	if (msg.author.bot) return;
+export async function CommandAuxiliar(msg: Message<MessageType.Default>) {
+	if (msg.author().raw.bot) return;
 	const ctx = await new Context(CLIENT, msg, COMMANDS).cache();
 	if (!ctx.COMMAND) return;
 

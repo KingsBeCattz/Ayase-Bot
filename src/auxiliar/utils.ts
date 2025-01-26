@@ -10,6 +10,17 @@ String.prototype.capitalize = function (): string {
 	return this.charAt(0).toUpperCase() + this.slice(1);
 };
 
+String.prototype.reverse = function (): string {
+	if (this.length === 0) return this as string;
+	return this.split('').reverse().join('');
+};
+
+String.prototype.fill = function (keywords) {
+	return this.replace(/{(\w+)}/g, (_, key) =>
+		String(keywords[key] ?? `{${key}}`)
+	);
+};
+
 Number.prototype.format = function (separator: '.' | ',' = ','): string {
 	return String(this).replace(/\B(?=(\d{3})+(?!\d))/g, separator);
 };
